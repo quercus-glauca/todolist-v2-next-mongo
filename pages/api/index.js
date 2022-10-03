@@ -1,8 +1,9 @@
-import { getTodoListItems, postTodoListItem } from "../../data/server-data-provider";
+import { getTodoListItems, postTodoListItem, deleteTodoListItem } from "../../data/server-data-provider";
 
 export default function handler(req, res) {
+  console.log('[DEBUG] API Method:', req.method);
+
   if (req.method === 'GET') {
-    console.log('[DEBUG] API handler:', req.method);
     getTodoListItems()
       .then((todoListItems) => {
         const itemsCount = !todoListItems ? 0 : todoListItems.length;
@@ -34,4 +35,21 @@ export default function handler(req, res) {
         res.status(500).json(error);
       });
   }
+  else if (req.method === 'DELETE') {
+    const itemId = req.body.itemId;
+    deleteTodoListItem(itemId)
+      .then((listItem) => {
+        const response = {
+          message: 'DELETE / Succeeded!',
+          result: {
+            ...listItem
+          },
+        };
+        res.status(200).json(response);
+      })
+      .catch((error) => {
+        res.status(500).json(error);
+      });
+  }
+
 }

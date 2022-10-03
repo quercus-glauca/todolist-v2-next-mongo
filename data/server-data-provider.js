@@ -24,7 +24,7 @@ const defaultSimpleTodoListItems = [
   },
 ];
 
-const defaultTodoListItems = [
+let defaultTodoListItems = [
   { 
     _id: 0,
     date: new Date(),
@@ -51,6 +51,7 @@ export async function getTodoListItems(listId) {
   // Connect to the MongoDB Database
   // Find all the Documents in the correct Collection
   // Return the results
+  // <<TODO>>
   
   // Dummy fallback implementation
   return defaultTodoListItems;
@@ -59,6 +60,7 @@ export async function getTodoListItems(listId) {
 export async function postTodoListItem(simpleListItem, listId) {
   // Connect to the MongoDB Database
   // Insert the Document 'simpleListItem' in the correct Collection
+  // <<TODO>>
   
   // Dummy fallback implementation
   const listItem = {
@@ -69,9 +71,12 @@ export async function postTodoListItem(simpleListItem, listId) {
   return listItem;
 }
 
-export async function deleteTodoListItem(listItem, listId) {
+export async function deleteTodoListItem(itemId, listId) {
   // Connect to the MongoDB Database
-  // Delete the Document 'simpleListItem' from the correct Collection
+  // Delete the Document 'listItem._id' from the correct Collection
+  // <<TODO>>
 
-  return NOT_IMPL;    
+  // Dummy fallback implementation
+  defaultTodoListItems = defaultTodoListItems.filter((item) => (item._id !== itemId));
+  return itemId;    
 }

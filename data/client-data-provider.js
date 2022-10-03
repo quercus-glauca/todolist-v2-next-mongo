@@ -63,8 +63,32 @@ export async function postTodoListItem(apiUrl, simpleListItem, listId) {
 
 }
 
-export async function deleteTodoListItem(apiUrl, listItem, listId) {
+export async function deleteTodoListItem(apiUrl, itemId, listId) {
   // Construct the API Entrypoint URL with [optional] 'listId'
-  // Use the JavaScript fetch API to DELETE to our Server
-  return NOT_IMPL;
+  const apiEntrypoint = (listId ? `${apiUrl}/${listId}` : apiUrl);
+
+  // Use the JavaScript fetch API to DELETE to our Server from the Client
+  // Return an explicit Promise to let the Client to Synch to the Result:
+  // - Resolve : a simple Object with the API result
+  // - Reject : the same standard JavaScript error Object already catched
+  return new Promise((resolve, reject) => {
+    fetch(apiEntrypoint, {
+      method: 'DELETE',
+      body: JSON.stringify({ itemId }),
+      headers: {
+        "Content-Type": "application/json",
+      }
+    })
+      .then((response) => (response.json()))
+      .then((data) => {
+        const { message, result } = data;
+        console.log('[API] DELETE Response:', message);
+        resolve(result);
+      })
+      .catch((error) => {
+        console.log('[API] DELETE Error:', error);
+        reject(error);
+      });
+  });
+
 }

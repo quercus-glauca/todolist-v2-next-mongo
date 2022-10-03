@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useRef, useState } from "react";
 import _ from 'lodash';
-import { getTodoListItems, postTodoListItem } from "../data/client-data-provider";
+import { getTodoListItems, postTodoListItem, deleteTodoListItem } from "../data/client-data-provider";
+import SingleItem from "./SingleItem";
 
 export default function ListItems(props) {
   const {
@@ -16,7 +17,7 @@ export default function ListItems(props) {
 
   const emptyListText = !singletonCompleted
     ? 'Loading...'
-    : 'The list is empty. Consider to add new items.';
+    : 'The list is empty.';
 
   const newItemInputRef = useRef();
 
@@ -58,6 +59,18 @@ export default function ListItems(props) {
 
   }
 
+  // Delete an item from the LIST at User Action
+  function handleDeleteItem(itemId, listId) {
+    deleteTodoListItem(apiUrl, itemId, listId)
+      .then((result) => {
+        console.log('[DEBUG] ListItems handleDeleteItem:', result);
+        setUpdateList((prevValue) => (prevValue + 1));
+      })
+      .catch((error) => {
+        console.log(error);
+      });
+  }
+
   // Render the component contents
   return (
     <Fragment>
@@ -71,9 +84,12 @@ export default function ListItems(props) {
           </div>
           : listItems.map((item) => {
             return (
-              <div className="item" key={item._id}>
-                <input type="checkbox" /><p>{item.text}</p>
-              </div>
+              <SingleItem
+                key={item._id}
+                listId={listId}
+                listItem={item}
+                onDeleteItem={handleDeleteItem}
+              />
             );
           })}
         <form className="item" onSubmit={handleAddNewItem}>
