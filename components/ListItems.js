@@ -45,7 +45,8 @@ export default function ListItems(props) {
     };
 
     postTodoListItem(apiUrl, simpleNewItem, listId)
-      .then(() => {
+      .then((listItem) => {
+        console.log('[DEBUG] ListItems handleAddNewItem:', listItem);
         setUpdateList((prevValue) => (prevValue + 1));
       })
       .catch((error) => {

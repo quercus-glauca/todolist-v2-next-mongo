@@ -66,6 +66,7 @@ export async function postTodoListItem(simpleListItem, listId) {
     ...simpleListItem,
   };
   defaultTodoListItems.push(listItem);
+  return listItem;
 }
 
 export async function deleteTodoListItem(listItem, listId) {
