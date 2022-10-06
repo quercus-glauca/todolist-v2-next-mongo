@@ -266,7 +266,7 @@ async function _deleteTodoListMainCollection(collection, itemId) {
   };
   const result = await collection.findOneAndDelete(queryFilter);
   console.log('[DEBUG] findOneAndDelete:', result);
-  let deletedListItem = { _id: itemId };
+  const deletedListItem = result.value;
   return deletedListItem;
 }
 
