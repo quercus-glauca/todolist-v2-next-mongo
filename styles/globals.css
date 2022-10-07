@@ -1,4 +1,4 @@
-html {
+body {
   background-color: #E4E9FD;
   background-image: -webkit-linear-gradient(65deg, #A683E3 50%, #E4E9FD 50%);
   min-height: 1000px;
@@ -10,8 +10,13 @@ h1 {
   padding: 10px;
 }
 
+.list-group-item.active {
+  background-color: #A683E3;
+  border-color: #A683E3;
+}
+
 .box {
-  max-width: 400px;
+  max-width: 460px;
   margin: 50px auto;
   background: white;
   border-radius: 5px;

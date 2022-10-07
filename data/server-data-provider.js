@@ -1,12 +1,17 @@
 import { MongoClient, ObjectId } from "mongodb";
+import _ from "lodash";
 
 const useDummyFallbackImplementation = false;
 const mongodbServerUri = process.env.MONGODB_LOCALSERVER_URI;
 const client = new MongoClient(mongodbServerUri);
 const todoListDBName = 'todoListDB';
 const todoListMainCollectionName = 'listItems';
-const todoListCustomCollectionName = 'customListItems';
+const todoListCustomCollectionName = 'customLists';
 
+
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// Collection: 'listItems' 
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // A sample single item without _id
 const sampleSimpleListItem = {
   date: new Date(),
@@ -34,6 +39,18 @@ let defaultTodoListItems = [
     text: "← Check here to delete the item.",
   },
 ];
+
+
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// Collection: 'customLists' 
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+const sampleCustomList = {
+  _id: new ObjectId(),
+  date: new Date(),
+  listId: "url-friendly-title",
+  listTitle: "User Friendly Title",
+  todoList: [],
+};
 
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -275,3 +292,114 @@ async function _deleteTodoListCustomCollection(collection, simpleListItem, listI
   console.log('[SERVER] Deleting the item from the custom collection...');
   // <<TODO>>
 }
+
+
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// Find all the Custom Lists
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+export async function getCustomLists() {
+  // Connect to the MongoDB Database
+  console.log('[SERVER] Connecting to the database...');
+  try {
+    await client.connect();
+    console.log('[SERVER] Successfully connected!');
+    
+    // Find all the Custom Lists in the 'customList' Collection
+    const db = client.db(todoListDBName);
+    const collection = db.collection(todoListCustomCollectionName);
+    const cursor = collection.find().project({ todoList: 0 });
+    const customLists = [];
+    await cursor.forEach((item) => {
+      customLists.push(item);
+    });
+    
+    // Return the results
+    console.log('[SERVER] Found', customLists.length, 'custom lists.');
+    return customLists;
+  }
+  catch (error) {
+    console.log('[SERVER] Error:', error);
+  }
+  finally {
+    // Ensures that the client will close when you finish/error
+    await client.close();
+    console.log('[SERVER] Connection closed.');
+  }
+}
+
+
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// Insert a new Custom Lists
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+export async function postCustomList(simpleCustomList) {
+  // <<TODO>>
+  return NOT_IMPL;
+}
+
+
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// Delete the Custom Lists
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+export async function deleteCustomList(listId) {
+  // <<TODO>>
+  return NOT_IMPL;
+}
+
+
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// Some Custom Lists Helpers
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+export function getListTitleFromListId(listId) {
+  const listTitle = _.kebabCase(listId.toLowerCase())
+    .replace(/-+/g, ' ')
+    .replace(/\b(\w)/g, ((x) => x.toUpperCase()));
+  return listTitle;
+}
+
+export function getListIdFromListTitle(listTitle) {
+  const listId = _.kebabCase(listTitle.toLowerCase());
+  return listId;
+}
+
+/****** FAST TEST CODE SECTION
+ * 
+let testListId = '',
+    testListTitle = '';
+
+testListId = '1234';
+testListTitle = getListTitleFromListId(testListId);
+console.log('[TEST] listId:', testListId, '>', testListTitle);
+testListId = getListIdFromListTitle(testListTitle);
+console.log('[TEST] listTitle:', testListTitle, '>', testListId);
+
+testListId = 'agata-christie';
+testListTitle = getListTitleFromListId(testListId);
+console.log('[TEST] listId:', testListId, '>', testListTitle);
+testListId = getListIdFromListTitle(testListTitle);
+console.log('[TEST] listTitle:', testListTitle, '>', testListId);
+
+testListId = 'my-amazing-collection';
+testListTitle = getListTitleFromListId(testListId);
+console.log('[TEST] listId:', testListId, '>', testListTitle);
+testListId = getListIdFromListTitle(testListTitle);
+console.log('[TEST] listTitle:', testListTitle, '>', testListId);
+
+testListId = '1001-dreams';
+testListTitle = getListTitleFromListId(testListId);
+console.log('[TEST] listId:', testListId, '>', testListTitle);
+testListId = getListIdFromListTitle(testListTitle);
+console.log('[TEST] listTitle:', testListTitle, '>', testListId);
+
+testListTitle = 'PaTAtes FREGIdes';
+testListId = getListIdFromListTitle(testListTitle);
+console.log('[TEST] listTitle:', testListTitle, '>', testListId);
+testListTitle = getListTitleFromListId(testListId);
+console.log('[TEST] listId:', testListId, '>', testListTitle);
+
+testListTitle = 'Són TRES peSSëtes';
+testListId = getListIdFromListTitle(testListTitle);
+console.log('[TEST] listTitle:', testListTitle, '>', testListId);
+testListTitle = getListTitleFromListId(testListId);
+console.log('[TEST] listId:', testListId, '>', testListTitle);
+
+ */
