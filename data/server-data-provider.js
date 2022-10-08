@@ -56,36 +56,28 @@ const sampleCustomList = {
 
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Find all the Documents in the correct Collection
+// Find all the 'listItems' in the 'main' Collection
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-export async function getTodoListItems(listId) {
+export async function getTodoListItems() {
   if (useDummyFallbackImplementation) {
-    return __dummy_getTodoListItems(listId);
+    return __dummy_getTodoListItems();
   }
 
   // Connect to the MongoDB Database
-  // Find all the Documents in the correct Collection
-  // Return the results
   console.log('[SERVER] Connecting to the database...');
   try {
     await client.connect();
     console.log('[SERVER] Successfully connected!');
 
+    // Find all the Documents in the main Collection
     const db = client.db(todoListDBName);
-    const collection = _getTodoListCollection(db, listId);
+    const collection = db.collection(todoListMainCollectionName);
     const cursor = collection.find();
 
-    if (!listId) {
-      // Find all the Documents in the main Collection
-      const todoListItems = await _getTodoListMainCollectionItems(collection, cursor);
-      return todoListItems;
-    }
-    else {
-      // Find all the Documents in the custom Collection
-      const todoListItems = await _getTodoListCustomCollectionItems(collection, cursor, listId);
-      return todoListItems;
-    }
+    const todoListItems = await _getTodoListItems(collection, cursor, "Today");
 
+    // Return the 'listItems' array
+    return todoListItems;
   }
   catch (error) {
     console.log('[SERVER] Error:', error);
@@ -97,25 +89,18 @@ export async function getTodoListItems(listId) {
   }
 }
 
+//-----------------------------------------------------------------------------
 // Dummy fallback implementation
-function __dummy_getTodoListItems(listId) {
+function __dummy_getTodoListItems() {
   // Find all the Documents in the dummy Collection
   // Return the results
   return defaultTodoListItems;
 }
 
-// Helper
-function _getTodoListCollection(db, listId) {
-  const todoListCollectionName = !listId
-    ? todoListMainCollectionName
-    : todoListCustomCollectionName;
-  const collection = db.collection(todoListCollectionName);
-  return collection;
-}
-
-// Find all the Documents in the main Collection
-async function _getTodoListMainCollectionItems(collection, cursor) {
-  console.log('[SERVER] Finding all the items in the main collection...');
+//-----------------------------------------------------------------------------
+// Find all the 'listItems' in the Collection (private helper)
+async function _getTodoListItems(collection, cursor, listTitle) {
+  console.log(`[SERVER] Finding all the items in the '${listTitle}'s list...`);
   const todoListItems = [];
 
   await cursor.forEach((item) => {
@@ -124,57 +109,44 @@ async function _getTodoListMainCollectionItems(collection, cursor) {
 
   if (todoListItems.length) {
     // Return the results
-    console.log('[SERVER] Found', todoListItems.length, 'list items in the main collection.');
+    console.log(`[SERVER] Found ${todoListItems.length} items in the '${listTitle}'s list.`);
     return todoListItems;
   }
   else {
     // If the collection is empty, return the default "Welcome Pack" Documents
-    await _populateTodoListMainCollectionMany(collection, defaultTodoListItems);
+    await _populateTodoListMany(collection, defaultTodoListItems, listTitle);
 
-    console.log('[SERVER] Returning the default "Welcome pack" list items for the main collection.');
+    console.log(`[SERVER] Returning the default "Welcome pack" items for the '${listTitle}'s list.`);
     return defaultTodoListItems;
   }
 
 }
 
-// Find all the Documents in the custom Collection
-async function _getTodoListCustomCollectionItems(collection, cursor, listId) {
-  console.log('[SERVER] Finding all the items in the custom collection...');
-
-  // <<TODO>>
-}
-
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Insert the Document 'simpleListItem' in the correct Collection
+// Insert a 'simpleListItem' in the 'main' Collection
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-export async function postTodoListItem(simpleListItem, listId) {
+export async function postTodoListItem(simpleListItem) {
   if (useDummyFallbackImplementation) {
-    return __dummy_postTodoListItem(simpleListItem, listId);
+    return __dummy_postTodoListItem(simpleListItem);
   }
 
   // Connect to the MongoDB Database
-  // Insert the Document 'simpleListItem' in the correct Collection
   console.log('[SERVER] Connecting to the database...');
   try {
     await client.connect();
     console.log('[SERVER] Successfully connected!');
 
+    // Insert the Document 'simpleListItem' in the main Collection
     const db = client.db(todoListDBName);
-    const collection = _getTodoListCollection(db, listId);
+    const collection = db.collection(todoListMainCollectionName);
 
-    if (!listId) {
-      // Insert the Document 'simpleListItem' in the main Collection
-      // Returns a full 'listItem' with its final _id
-      const listItem = await _populateTodoListMainCollection(collection, simpleListItem);
-      return listItem;
-    }
-    else {
-      // Insert the Document 'simpleListItem' in the custom Collection
-      // Returns a full 'listItem' with its final _id
-      const listItem = await _populateTodoListCustomCollection(collection, simpleListItem, listId);
-      return listItem;
-    }
+    const result = await collection.insertOne(simpleListItem);
+
+    // Returns a full 'listItem' with its final _id
+    let insertedListItem = { ...simpleListItem };
+    insertedListItem._id = result.insertedId;
+    return insertedListItem;
   }
   catch (error) {
     console.log('[SERVER] Error:', error);
@@ -186,8 +158,9 @@ export async function postTodoListItem(simpleListItem, listId) {
   }
 }
 
+//-----------------------------------------------------------------------------
 // Dummy fallback implementation
-function __dummy_postTodoListItem(simpleListItem, listId) {
+function __dummy_postTodoListItem(simpleListItem) {
   // Insert the Document 'simpleListItem' in the correct Collection
   const listItem = {
     _id: defaultTodoListItems.length,
@@ -197,65 +170,38 @@ function __dummy_postTodoListItem(simpleListItem, listId) {
   return listItem;
 }
 
-// Insert the Document 'listItem' in the main Collection
-async function _populateTodoListMainCollection(collection, listItem) {
-  console.log('[SERVER] Inserting the item in the main collection...');
-
-  const result = await collection.insertOne(listItem);
-  let insertedListItem = { ...listItem };
-  insertedListItem._id = result.insertedId;
-  return insertedListItem;
-}
-
-async function _populateTodoListMainCollectionMany(collection, listItems) {
-  console.log('[SERVER] Inserting the items in the main collection...');
+//-----------------------------------------------------------------------------
+// Insert all the 'listItems' into the Collection (private helper)
+async function _populateTodoListMany(collection, listItems, listTitle) {
+  console.log(`[SERVER] Inserting the items in the '${listTitle}'s list...`);
 
   const result = await collection.insertMany(listItems);
   return result.insertedIds.length;
 }
 
-// Insert the Document 'listItem' in the custom Collection
-async function _populateTodoListCustomCollection(collection, listItem, listId) {
-  console.log('[SERVER] Inserting the item in the custom collection...');
-  // <<TODO>>
-}
-
-async function _populateTodoListCustomCollectionMany(collection, listItems, listId) {
-  console.log('[SERVER] Inserting the items in the custom collection...');
-  // <<TODO>>
-}
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Delete the Document 'listItem._id' from the correct Collection
+// Delete the 'listItem._id' from the 'main' Collection
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-export async function deleteTodoListItem(itemId, listId) {
+export async function deleteTodoListItem(itemId) {
   if (useDummyFallbackImplementation) {
-    return __dummy_deleteTodoListItem(itemId, listId);
+    return __dummy_deleteTodoListItem(itemId);
   }
 
   // Connect to the MongoDB Database
-  // Delete the Document 'listItem._id' from the correct Collection
   console.log('[SERVER] Connecting to the database...');
   try {
     await client.connect();
     console.log('[SERVER] Successfully connected!');
 
     const db = client.db(todoListDBName);
-    const collection = _getTodoListCollection(db, listId);
+    const collection = db.collection(todoListMainCollectionName);
 
-    if (!listId) {
-      // Delete the Document 'listItem._id' from the main Collection
-      // Returns the deleted full 'listItem'
-      const listItem = await _deleteTodoListMainCollection(collection, itemId);
-      return listItem;
-    }
-    else {
-      // Delete the Document 'listItem._id' from the custom Collection
-      // Returns the deleted full 'listItem'
-      console.log('[SERVER] Deleting the item from the custom collection...');
-      const listItem = await _deleteTodoListCustomCollection(collection, itemId, listId);
-      return listItem;
-    }
+    // Delete the 'listItem._id' from the main Collection
+    const listItem = await _deleteTodoListItem(collection, itemId, "Today");
+
+    // Return the deleted full 'listItem'
+    return listItem;
   }
   catch (error) {
     console.log('[SERVER] Error:', error);
@@ -267,16 +213,18 @@ export async function deleteTodoListItem(itemId, listId) {
   }
 }
 
+//-----------------------------------------------------------------------------
 // Dummy fallback implementation
-function __dummy_deleteTodoListItem(itemId, listId) {
+function __dummy_deleteTodoListItem(itemId) {
   // Delete the Document 'listItem._id' from the correct Collection
   defaultTodoListItems = defaultTodoListItems.filter((item) => (item._id !== itemId));
   return { itemId };
 }
 
-// Delete the Document 'listItem._id' from the main Collection
-async function _deleteTodoListMainCollection(collection, itemId) {
-  console.log('[SERVER] Deleting the item from the main collection...');
+//-----------------------------------------------------------------------------
+// Delete the Document 'listItem._id' from the Collection (private helper)
+async function _deleteTodoListItem(collection, itemId, listTitle) {
+  console.log(`[SERVER] Deleting the item from the '${listTitle}'s list...`);
 
   const queryFilter = {
     _id: (typeof itemId === "string" && itemId.length === 24)
@@ -287,12 +235,6 @@ async function _deleteTodoListMainCollection(collection, itemId) {
   console.log('[DEBUG] findOneAndDelete:', result);
   const deletedListItem = result.value;
   return deletedListItem;
-}
-
-// Delete the Document 'listItem._id' from the custom Collection
-async function _deleteTodoListCustomCollection(collection, simpleListItem, listId) {
-  console.log('[SERVER] Deleting the item from the custom collection...');
-  // <<TODO>>
 }
 
 
@@ -381,7 +323,7 @@ export async function deleteCustomList(listId) {
     const collection = db.collection(todoListCustomCollectionName);
 
     const result = await collection.findOneAndDelete(
-      { listId: listId }, 
+      { listId: listId },
       { projection: { todoList: 0 } }
     );
     console.log('[DEBUG] findOneAndDelete:', result);
