@@ -10,7 +10,7 @@ export default function Home() {
           <div className="col-3">
             <ListSelector 
               activeListId="0"
-              apiUrl="/api/list"
+              apiUrl="/api/lists"
             />
           </div>
           <div className="col">

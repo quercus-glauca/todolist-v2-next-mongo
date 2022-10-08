@@ -9,7 +9,7 @@ import {
 export default function ListSelector(props) {
   const {
     activeListId,      // the customList.listId which is active, 0 is for "Today" main list
-    apiUrl,            // '/api/list' route to GET, POST and DELETE customLists
+    apiUrl,            // '/api/lists' route to GET, POST and DELETE customLists
 
   } = props;
 

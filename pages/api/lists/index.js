@@ -2,7 +2,7 @@ import { getCustomLists, postCustomList, deleteCustomList } from "../../../data/
 
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// API Entry Point: /api/list
+// API Entry Point: /api/lists
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 export default async function handler(req, res) {
   console.log('[API]', req.method, 'HANDLER BEGIN...');
