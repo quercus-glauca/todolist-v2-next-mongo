@@ -305,7 +305,7 @@ export async function getCustomLists() {
   try {
     await client.connect();
     console.log('[SERVER] Successfully connected!');
-    
+
     // Find all the Custom Lists in the 'customList' Collection
     const db = client.db(todoListDBName);
     const collection = db.collection(todoListCustomCollectionName);
@@ -314,7 +314,7 @@ export async function getCustomLists() {
     await cursor.forEach((item) => {
       customLists.push(item);
     });
-    
+
     // Return the results
     console.log('[SERVER] Found', customLists.length, 'custom lists.');
     return customLists;
@@ -331,18 +331,69 @@ export async function getCustomLists() {
 
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Insert a new Custom Lists
+// Insert a new Custom List
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 export async function postCustomList(simpleCustomList) {
-  // <<TODO>>
-  return NOT_IMPL;
+  // Connect to the MongoDB Database
+  console.log('[SERVER] Connecting to the database...');
+  try {
+    await client.connect();
+    console.log('[SERVER] Successfully connected!');
+
+    // Insert the new Custom List in the 'customList' Collection
+    // <<TODO>> Avoid duplications!
+    const db = client.db(todoListDBName);
+    const collection = db.collection(todoListCustomCollectionName);
+
+    const newCustomList = {
+      ...simpleCustomList,
+      todoList: [],
+    };
+
+    const result = await collection.insertOne(newCustomList);
+    let insertedCustomList = { ...newCustomList };
+    insertedCustomList._id = result.insertedId;
+    return insertedCustomList;
+  }
+  catch (error) {
+    console.log('[SERVER] Error:', error);
+  }
+  finally {
+    // Ensures that the client will close when you finish/error
+    await client.close();
+    console.log('[SERVER] Connection closed.');
+  }
 }
 
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Delete the Custom Lists
+// Delete the Custom List
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 export async function deleteCustomList(listId) {
-  // <<TODO>>
-  return NOT_IMPL;
+  // Connect to the MongoDB Database
+  console.log('[SERVER] Connecting to the database...');
+  try {
+    await client.connect();
+    console.log('[SERVER] Successfully connected!');
+
+    // Delete the Custom List from the 'customList' Collection
+    const db = client.db(todoListDBName);
+    const collection = db.collection(todoListCustomCollectionName);
+
+    const result = await collection.findOneAndDelete(
+      { listId: listId }, 
+      { projection: { todoList: 0 } }
+    );
+    console.log('[DEBUG] findOneAndDelete:', result);
+    const deletedCustomList = result.value;
+    return deletedCustomList;
+  }
+  catch (error) {
+    console.log('[SERVER] Error:', error);
+  }
+  finally {
+    // Ensures that the client will close when you finish/error
+    await client.close();
+    console.log('[SERVER] Connection closed.');
+  }
 }
