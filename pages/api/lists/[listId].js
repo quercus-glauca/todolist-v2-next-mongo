@@ -1,4 +1,4 @@
-import { getTodoListItems, postTodoListItem, deleteTodoListItem } from "../../../data/server-data-provider";
+import { getCustomTodoListItems, postCustomTodoListItem, deleteCustomTodoListItem } from "../../../data/server-data-provider";
 
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -11,10 +11,13 @@ export default async function handler(req, res) {
 
   if (req.method === 'GET') {
     try {
-      const todoListItems = await getTodoListItems(listId);
+      const todoListItems = await getCustomTodoListItems(listId);
       const itemsCount = !todoListItems ? 0 : todoListItems.length;
+      const details = (todoListItems === null 
+        ? "The list does not exist!"
+        : `Returning ${itemsCount} list items.`);
       const response = {
-        message: `GET All From /api/lists/${listId} Succeeded! Returning ${itemsCount} list items.`,
+        message: `GET All From /api/lists/${listId} Succeeded! ${details}`,
         result: {
           listItems: todoListItems,
         },
@@ -31,7 +34,9 @@ export default async function handler(req, res) {
   else if (req.method === 'POST') {
     try {
       const simpleListItem = req.body.simpleListItem;
-      const insertedListItem = await postTodoListItem(simpleListItem, listId);
+      console.log('[DEBUG] simpleListItem:', simpleListItem);
+      console.log('[DEBUG] listId:', listId);
+      const insertedListItem = await postCustomTodoListItem(listId, simpleListItem);
       const response = {
         message: `POST Item To /api/lists/${listId} Succeeded!`,
         result: {
@@ -50,7 +55,7 @@ export default async function handler(req, res) {
   else if (req.method === 'DELETE') {
     try {
       const itemId = req.body.itemId;
-      const deletedListItem = await deleteTodoListItem(itemId, listId);
+      const deletedListItem = await deleteCustomTodoListItem(listId, itemId);
       const response = {
         message: `DELETE Item From /api/lists/${listId} Succeeded!`,
         result: {
