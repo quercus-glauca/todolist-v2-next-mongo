@@ -1,20 +1,22 @@
-import { getCustomLists, postCustomList, deleteCustomList } from "../../../data/server-data-provider";
+import { getTodoListItems, postTodoListItem, deleteTodoListItem } from "../../../data/server-data-provider";
 
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// API Entry Point: /api/lists
+// API Entry Point: /api/lists/[listId]
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 export default async function handler(req, res) {
-  console.log('[API]', req.method, '/api/lists HANDLER BEGIN...');
+  console.log('[API]', req.method, '/api/lists/[listId] HANDLER BEGIN...');
+  
+  const { listId } = req.query;
 
   if (req.method === 'GET') {
     try {
-      const customLists = await getCustomLists();
-      const listsCount = !customLists ? 0 : customLists.length;
+      const todoListItems = await getTodoListItems(listId);
+      const itemsCount = !todoListItems ? 0 : todoListItems.length;
       const response = {
-        message: `GET All From /api/lists Succeeded! Returning ${listsCount} custom lists.`,
+        message: `GET All From /api/lists/${listId} Succeeded! Returning ${itemsCount} list items.`,
         result: {
-          customLists: customLists,
+          listItems: todoListItems,
         },
       };
       console.log('[API] GET: Responding to client...');
@@ -28,12 +30,12 @@ export default async function handler(req, res) {
 
   else if (req.method === 'POST') {
     try {
-      const simpleCustomList = req.body.simpleCustomList;
-      const insertedCustomList = await postCustomList(simpleCustomList);
+      const simpleListItem = req.body.simpleListItem;
+      const insertedListItem = await postTodoListItem(simpleListItem, listId);
       const response = {
-        message: 'POST Item To /api/lists Succeeded!',
+        message: `POST Item To /api/lists/${listId} Succeeded!`,
         result: {
-          customList: insertedCustomList,
+          listItem: insertedListItem,
         },
       };
       console.log('[API] POST: Responding to client...');
@@ -47,12 +49,12 @@ export default async function handler(req, res) {
 
   else if (req.method === 'DELETE') {
     try {
-      const listId = req.body.listId;
-      const deletedCustomList = await deleteCustomList(listId);
+      const itemId = req.body.itemId;
+      const deletedListItem = await deleteTodoListItem(itemId, listId);
       const response = {
-        message: 'DELETE Item From /api/lists Succeeded!',
+        message: `DELETE Item From /api/lists/${listId} Succeeded!`,
         result: {
-          customList: deletedCustomList,
+          listItem: deletedListItem,
         },
       };
       console.log('[API] DELETE: Responding to client...');
@@ -64,5 +66,5 @@ export default async function handler(req, res) {
     }
   }
 
-  console.log('[API]', req.method, '/api/lists HANDLER END');
+  console.log('[API]', req.method, '/api/lists/[listId] HANDLER END');
 }

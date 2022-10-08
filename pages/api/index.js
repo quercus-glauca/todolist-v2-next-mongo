@@ -8,14 +8,14 @@ import { getTodoListItems, postTodoListItem, deleteTodoListItem } from "../../da
 //   "API resolved without sending a response for /api, this may result in stalled requests."
 // When the handler function is declared as 'async', all goes fine!
 export default async function handler(req, res) {
-  console.log('[API]', req.method, 'HANDLER BEGIN...');
+  console.log('[API]', req.method, '/api HANDLER BEGIN...');
 
   if (req.method === 'GET') {
     try {
       const todoListItems = await getTodoListItems();
       const itemsCount = !todoListItems ? 0 : todoListItems.length;
       const response = {
-        message: `GET / Succeeded! Returning ${itemsCount} list items.`,
+        message: `GET All From /api Succeeded! Returning ${itemsCount} list items.`,
         result: {
           listItems: todoListItems,
         },
@@ -34,7 +34,7 @@ export default async function handler(req, res) {
       const simpleListItem = req.body.simpleListItem;
       const insertedListItem = await postTodoListItem(simpleListItem);
       const response = {
-        message: 'POST / Succeeded!',
+        message: 'POST Item To /api Succeeded!',
         result: {
           listItem: insertedListItem,
         },
@@ -53,7 +53,7 @@ export default async function handler(req, res) {
       const itemId = req.body.itemId;
       const deletedListItem = await deleteTodoListItem(itemId);
       const response = {
-        message: 'DELETE / Succeeded!',
+        message: 'DELETE Item From /api Succeeded!',
         result: {
           listItem: deletedListItem,
         },
@@ -67,7 +67,7 @@ export default async function handler(req, res) {
     }
   }
 
-  console.log('[API]', req.method, 'HANDLER END');
+  console.log('[API]', req.method, '/api HANDLER END');
 }
 
 function __handler(req, res) {
