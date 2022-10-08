@@ -9,14 +9,14 @@ export default function Home() {
         <div className="row">
           <div className="col-3">
             <ListSelector 
-              activeListId
-              apiUrl='/api/list'
+              activeListId="0"
+              apiUrl="/api/list"
             />
           </div>
           <div className="col">
             <ListItems
-              listTitle='Today'
-              apiUrl='/api'
+              listTitle="Today"
+              apiUrl="/api"
             />
           </div>
         </div>

@@ -1,4 +1,4 @@
-import { getCustomLists, postCustomList, deleteCustomList } from "../../data/server-data-provider";
+import { getCustomLists, postCustomList, deleteCustomList } from "../../../data/server-data-provider";
 
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -12,7 +12,7 @@ export default async function handler(req, res) {
       const customLists = await getCustomLists();
       const listsCount = !customLists ? 0 : customLists.length;
       const response = {
-        message: `GET / Succeeded! Returning ${listsCount} custom lists.`,
+        message: `GET /list Succeeded! Returning ${listsCount} custom lists.`,
         result: {
           customLists: customLists,
         },
@@ -31,7 +31,7 @@ export default async function handler(req, res) {
       const simpleCustomList = req.body.simpleCustomList;
       const insertedCustomList = await postCustomList(simpleCustomList);
       const response = {
-        message: 'POST / Succeeded!',
+        message: 'POST /list Succeeded!',
         result: {
           customList: insertedCustomList,
         },
@@ -50,7 +50,7 @@ export default async function handler(req, res) {
       const listId = req.body.listId;
       const deletedCustomList = await deleteCustomList(listId);
       const response = {
-        message: 'DELETE / Succeeded!',
+        message: 'DELETE /list Succeeded!',
         result: {
           customList: deletedCustomList,
         },
