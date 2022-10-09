@@ -1,7 +1,7 @@
 import _ from "lodash";
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// Some Custom Lists Helpers
+// Some Custom Lists Helpers - For Clients as well as the Server
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 export function getListTitleFromListId(listId) {
   const listTitle = _.kebabCase(listId.toLowerCase())

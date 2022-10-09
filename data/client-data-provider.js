@@ -32,8 +32,8 @@ export async function getTodoListItems(apiUrl, listId) {
       .then((response) => (response.json()))
       .then((data) => {
         const { message, result } = data;
-        console.log('[API] GET Response:', message);
-        resolve(result.listItems);
+        console.log('[API]', message);
+        resolve(result.items);
       })
       .catch((error) => {
         console.log('[API] GET Error:', error);
@@ -63,7 +63,7 @@ export async function postTodoListItem(apiUrl, simpleListItem, listId) {
       .then((data) => {
         const { message, result } = data;
         console.log('[API] POST Response:', message);
-        resolve(result.listItem);
+        resolve(result.item);
       })
       .catch((error) => {
         console.log('[API] POST Error:', error);
@@ -116,8 +116,8 @@ export async function getCustomLists(apiUrl) {
       .then((response) => (response.json()))
       .then((data) => {
         const { message, result } = data;
-        console.log('[API] GET Response:', message);
-        resolve(result.customLists);
+        console.log('[API]', message);
+        resolve(result.items);
       })
       .catch((error) => {
         console.log('[API] GET Error:', error);
@@ -147,7 +147,7 @@ export async function postCustomList(apiUrl, simpleCustomList) {
       .then((data) => {
         const { message, result } = data;
         console.log('[API] POST Response:', message);
-        resolve(result.customList);
+        resolve(result.item);
       })
       .catch((error) => {
         console.log('[API] POST Error:', error);

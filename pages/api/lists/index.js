@@ -1,5 +1,5 @@
 import { getCustomLists, postCustomList, deleteCustomList } from "../../../data/server-data-provider";
-
+import { buildGetResponse, buildPostResponse, buildDeleteResponse } from "../../../data/some-api-helpers";
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // API Entry Point: /api/lists
@@ -10,15 +10,13 @@ export default async function handler(req, res) {
   if (req.method === 'GET') {
     try {
       const customLists = await getCustomLists();
-      const listsCount = !customLists ? 0 : customLists.length;
-      const response = {
-        message: `GET All From /api/lists Succeeded! Returning ${listsCount} custom lists.`,
-        result: {
-          customLists: customLists,
-        },
-      };
+
+      const [, status, response] = buildGetResponse(
+        "/api/lists",
+        customLists,
+        "all the lists in the 'customLists' collection");
       console.log('[API] GET: Responding to client...');
-      res.status(200).json(response);
+      res.status(status).json(response);
     }
     catch (error) {
       console.log('[API] GET Error:', error);
@@ -30,14 +28,13 @@ export default async function handler(req, res) {
     try {
       const simpleCustomList = req.body.simpleCustomList;
       const insertedCustomList = await postCustomList(simpleCustomList);
-      const response = {
-        message: 'POST Item To /api/lists Succeeded!',
-        result: {
-          customList: insertedCustomList,
-        },
-      };
+
+      const [, status, response] = buildPostResponse(
+        "/api/lists",
+        insertedCustomList,
+        "the list into the 'customLists' collection");
       console.log('[API] POST: Responding to client...');
-      res.status(201).json(response);
+      res.status(status).json(response);
     }
     catch (error) {
       console.log('[API] POST Error:', error);
@@ -49,14 +46,13 @@ export default async function handler(req, res) {
     try {
       const listId = req.body.listId;
       const deletedCustomList = await deleteCustomList(listId);
-      const response = {
-        message: 'DELETE Item From /api/lists Succeeded!',
-        result: {
-          customList: deletedCustomList,
-        },
-      };
+
+      const [, status, response] = buildDeleteResponse(
+        "/api/lists",
+        deletedCustomList,
+        "the list from the 'customLists' collection");
       console.log('[API] DELETE: Responding to client...');
-      res.status(200).json(response);
+      res.status(status).json(response);
     }
     catch (error) {
       console.log('[API] DELETE Error:', error);

@@ -100,7 +100,7 @@ function __dummy_getTodoListItems() {
 //-----------------------------------------------------------------------------
 // Find all the 'listItems' in the Collection (private helper)
 async function _getTodoListItems(collection, cursor) {
-  console.log(`[SERVER] Finding all the items in the 'Today's list...`);
+  console.log(`[SERVER] Finding all the items in the 'Today' list...`);
   const todoListItems = [];
 
   await cursor.forEach((item) => {
@@ -109,14 +109,14 @@ async function _getTodoListItems(collection, cursor) {
 
   if (todoListItems.length) {
     // Return the results
-    console.log(`[SERVER] Found ${todoListItems.length} items in the 'Today's list.`);
+    console.log(`[SERVER] Found ${todoListItems.length} items in the 'Today' list.`);
     return todoListItems;
   }
   else {
     // If the collection is empty, return the default "Welcome Pack" Documents
     const result = await collection.insertMany(defaultTodoListItems);
     console.log('[MONGODB] result:', result);
-    console.log(`[SERVER] Returning the default "Welcome pack" ${result.insertedIds.length} items for the 'Today's list.`);
+    console.log(`[SERVER] Returning the default "Welcome pack" ${result.insertedIds.length} items for the 'Today' list.`);
     return defaultTodoListItems;
   }
 
@@ -141,12 +141,13 @@ export async function postTodoListItem(simpleListItem) {
     const db = client.db(todoListDBName);
     const collection = db.collection(todoListMainCollectionName);
 
-    console.log(`[SERVER] Inserting a new item into the 'Today's list...`);
+    console.log(`[SERVER] Inserting a new item into the 'Today' list...`);
     const result = await collection.insertOne(simpleListItem);
     console.log('[MONGODB] result:', result);
 
     // Return a full 'listItem' with its final _id
-    console.log(`[SERVER] Inserted the new item '${result.insertedId}' into the 'Today's list...`);
+    // <<TODO>> Check the 'result' and ONFAIL return an Error string
+    console.log(`[SERVER] Inserted the new item '${result.insertedId}' into the 'Today' list...`);
     let insertedListItem = { ...simpleListItem };
     insertedListItem._id = result.insertedId;
     return insertedListItem;
@@ -192,7 +193,7 @@ export async function deleteTodoListItem(itemId) {
     const db = client.db(todoListDBName);
     const collection = db.collection(todoListMainCollectionName);
 
-    console.log(`[SERVER] Deleting the item '${itemId}' from the 'Today's list...`);
+    console.log(`[SERVER] Deleting the item '${itemId}' from the 'Today' list...`);
     const queryFilter = {
       _id: (typeof itemId === "string" && itemId.length === 24)
         ? new ObjectId(itemId)
@@ -202,6 +203,7 @@ export async function deleteTodoListItem(itemId) {
     console.log('[MONGODB] result:', result);
 
     // Return the deleted full 'listItem'
+    // <<TODO>> Check the 'result' and ONFAIL return an Error string
     const deletedListItem = result.value;
     return deletedListItem;
   }
@@ -283,6 +285,7 @@ export async function postCustomList(simpleCustomList) {
     console.log('[MONGODB] result:', result);
 
     // Return the full 'customList' with its final _id
+    // <<TODO>> Check the 'result' and ONFAIL return an Error string
     let insertedCustomList = { ...newCustomList };
     insertedCustomList._id = result.insertedId;
     return insertedCustomList;
@@ -323,6 +326,7 @@ export async function deleteCustomList(listId) {
     console.log('[MONGODB] result:', result);
 
     // Return the deleted full 'customList'
+    // <<TODO>> Check the 'result' and and ONFAIL return an Error string
     const deletedCustomList = result.value;
     return deletedCustomList;
   }
@@ -352,21 +356,19 @@ export async function getCustomTodoListItems(listId) {
     const db = client.db(todoListDBName);
     const collection = db.collection(todoListCustomCollectionName);
 
-    console.log(`[SERVER] Finding all the items in the '${listId}'s list...`);
+    console.log(`[SERVER] Finding all the items in the '${listId}' list...`);
     const queryFilter = { listId };
     const cursor = collection.find(queryFilter);
-    let listItems = null;
+    let listItems;
     await cursor.forEach((item) => {
       listItems = item.todoList;
     });
 
+    // Check the 'result' and ONFAIL return an Error string
+    if (!listItems) {
+      return `The '${listId}' list does not exist!`;
+    }
     // Return the results
-    if (listItems) {
-      console.log(`[SERVER] Found ${listItems.length} items in the '${listId}'s list.`);
-    }
-    else {
-      console.log(`[SERVER] The list '${listId}' does not exist!`);
-    }
     return listItems;
   }
   catch (error) {
@@ -395,7 +397,7 @@ export async function postCustomTodoListItem(listId, simpleListItem) {
     const db = client.db(todoListDBName);
     const collection = db.collection(todoListCustomCollectionName);
 
-    console.log(`[SERVER] Inserting a new item into the '${listId}'s list...`);
+    console.log(`[SERVER] Inserting a new item into the '${listId}' list...`);
     const queryFilter = { listId };
     const insertedListItem = {
       _id: new ObjectId(),
@@ -409,8 +411,12 @@ export async function postCustomTodoListItem(listId, simpleListItem) {
     const result = await collection.updateOne(queryFilter, updateOperations);
     console.log('[MONGODB] result:', result);
 
+    // Check the 'result' and ONFAIL return an Error string
+    if (!("acknowledged" in result) || result.modifiedCount === 0) {
+      return `Failed to insert a new item into the '${listId}' list.`;
+    }
     // Return a full 'listItem' with its final _id
-    console.log(`[SERVER] Inserted the new item '${insertedListItem._id}' into the '${listId}'s list...`);
+    console.log(`[SERVER] Inserted the new item '${insertedListItem._id}' into the '${listId}' list...`);
     return insertedListItem;
   }
   catch (error) {
@@ -439,7 +445,7 @@ export async function deleteCustomTodoListItem(listId, itemId) {
     const db = client.db(todoListDBName);
     const collection = db.collection(todoListCustomCollectionName);
 
-    console.log(`[SERVER] Deleting the item '${itemId}' from the '${listId}'s list...`);
+    console.log(`[SERVER] Deleting the item '${itemId}' from the '${listId}' list...`);
     const queryFilter = { listId };
     const deletedListItem = {
       _id: (typeof itemId === "string" && itemId.length === 24)
@@ -451,18 +457,22 @@ export async function deleteCustomTodoListItem(listId, itemId) {
         todoList: deletedListItem
       }
     };
-  const result = await collection.updateOne(queryFilter, updateOperations);
-  console.log('[MONGODB] result:', result);
+    const result = await collection.updateOne(queryFilter, updateOperations);
+    console.log('[MONGODB] result:', result);
 
-  // Return the deleted full 'listItem'
-  return deletedListItem;
-}
+    // Check the 'result' and ONFAIL return an Error string
+    if (!("acknowledged" in result) || result.modifiedCount === 0) {
+      return `Failed to find the item '${itemId}' in the '${listId}' list.`;
+    }
+    // Return the deleted full 'listItem'
+    return deletedListItem;
+  }
   catch (error) {
-  console.log('[SERVER] Error:', error);
-}
-finally {
-  // Ensures that the client will close when you finish/error
-  await client.close();
-  console.log('[SERVER] Connection closed.');
-}
+    console.log('[SERVER] Error:', error);
+  }
+  finally {
+    // Ensures that the client will close when you finish/error
+    await client.close();
+    console.log('[SERVER] Connection closed.');
+  }
 }

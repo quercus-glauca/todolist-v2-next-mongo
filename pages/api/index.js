@@ -1,4 +1,5 @@
 import { getTodoListItems, postTodoListItem, deleteTodoListItem } from "../../data/server-data-provider";
+import { buildGetResponse, buildPostResponse, buildDeleteResponse } from "../../data/some-api-helpers";
 
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -13,15 +14,13 @@ export default async function handler(req, res) {
   if (req.method === 'GET') {
     try {
       const todoListItems = await getTodoListItems();
-      const itemsCount = !todoListItems ? 0 : todoListItems.length;
-      const response = {
-        message: `GET All From /api Succeeded! Returning ${itemsCount} list items.`,
-        result: {
-          listItems: todoListItems,
-        },
-      };
+
+      const [, status, response] = buildGetResponse(
+        "/api",
+        todoListItems,
+        "all the items in the main 'listItems' collection");
       console.log('[API] GET: Responding to client...');
-      res.status(200).json(response);
+      res.status(status).json(response);
     }
     catch (error) {
       console.log('[API] GET Error:', error);
@@ -33,14 +32,13 @@ export default async function handler(req, res) {
     try {
       const simpleListItem = req.body.simpleListItem;
       const insertedListItem = await postTodoListItem(simpleListItem);
-      const response = {
-        message: 'POST Item To /api Succeeded!',
-        result: {
-          listItem: insertedListItem,
-        },
-      };
+
+      const [, status, response] = buildPostResponse(
+        "/api",
+        insertedListItem,
+        "the item to the main 'listItems' collection");
       console.log('[API] POST: Responding to client...');
-      res.status(201).json(response);
+      res.status(status).json(response);
     }
     catch (error) {
       console.log('[API] POST Error:', error);
@@ -52,14 +50,13 @@ export default async function handler(req, res) {
     try {
       const itemId = req.body.itemId;
       const deletedListItem = await deleteTodoListItem(itemId);
-      const response = {
-        message: 'DELETE Item From /api Succeeded!',
-        result: {
-          listItem: deletedListItem,
-        },
-      };
+
+      const [, status, response] = buildDeleteResponse(
+        "/api",
+        deletedListItem,
+        "the item from the main 'listItems' collection");
       console.log('[API] DELETE: Responding to client...');
-      res.status(200).json(response);
+      res.status(status).json(response);
     }
     catch (error) {
       console.log('[API] DELETE Error:', error);
