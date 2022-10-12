@@ -13,6 +13,9 @@ export default function ListSelector(props) {
 
   } = props;
 
+  console.log('[DEBUG] ListSelector props:', props);
+
+  const [activeListInSync, setActiveListInSync] = useState(activeListId === "0");
   const [singletonCompleted, setSingletonCompleted] = useState(false);
   const [customLists, setCustomLists] = useState([]);
   const [updateSelector, setUpdateSelector] = useState(0);
@@ -23,19 +26,39 @@ export default function ListSelector(props) {
 
   const newListInputRef = useRef();
 
-  // Populate the SELECTOR from the Client-side
   useEffect(() => {
-    getCustomLists(apiUrl)
-      .then((selectorLists) => {
-        console.log('[DEBUG] ListSelector useEffect:', selectorLists);
-        setCustomLists(selectorLists);
-        setSingletonCompleted(true);
-      })
-      .catch((error) => {
-        console.log(error);
-      });
+    // Populate the 'customList' /w 'activeListId' IIF it doesn't exist!
+    if (!activeListInSync) {
+      const simpleNewList = {
+        date: new Date(),
+        listId: activeListId,
+        listTitle: getListTitleFromListId(activeListId),
+      };
+      postCustomList(apiUrl, simpleNewList)
+        .then((customList) => {
+          console.log('[DEBUG] ListSelector useEffect.1:', customList);
+          setActiveListInSync(true);
+          setUpdateSelector((prevValue) => (prevValue + 1));
+        })
+        .catch((error) => {
+          console.log(error);
+        });
+    }
 
-  }, [apiUrl, updateSelector]);
+    // Populate the SELECTOR from the Client-side
+    if (activeListInSync) {
+      getCustomLists(apiUrl)
+        .then((selectorLists) => {
+          console.log('[DEBUG] ListSelector useEffect.2:', selectorLists);
+          setCustomLists(selectorLists);
+          setSingletonCompleted(true);
+        })
+        .catch((error) => {
+          console.log(error);
+        });
+    }
+
+  }, [activeListId, apiUrl, activeListInSync, updateSelector]);
 
   // Add a new list to the SELECTOR at User Action
   function handleAddNewList(event) {
@@ -82,16 +105,16 @@ export default function ListSelector(props) {
       <h1>Chose a list</h1>
       <div className="list-group">
         <Link href="/" key="0">
-          {activeListId === 0
-            ? <a className="list-group-item list-group-item-action">Today</a>
-            : <a className="list-group-item list-group-item-action active" aria-current="true">Today</a>
+          {activeListId === "0"
+            ? <a className="list-group-item list-group-item-action active" aria-current="true">Today</a>
+            : <a className="list-group-item list-group-item-action">Today</a>
           }
         </Link>
-        {!(singletonCompleted && !_.isEmpty(customLists))
+        {!(singletonCompleted && _.isArray(customLists) && !_.isEmpty(customLists))
           ? <a className="list-group-item list-group-item-action disabled">{emptySelectorText}</a>
           : customLists.map((item) => {
             return (
-              <Link href={`/list/${item.listId}`} key={item.listId}>
+              <Link href={`/lists/${item.listId}`} key={item.listId}>
                 {activeListId === item.listId
                   ? <a className="list-group-item list-group-item-action active" aria-current="true">{item.listTitle}</a>
                   : <a className="list-group-item list-group-item-action">{item.listTitle}</a>

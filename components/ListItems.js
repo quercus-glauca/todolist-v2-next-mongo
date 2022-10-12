@@ -78,7 +78,7 @@ export default function ListItems(props) {
         <h1>{listTitle}</h1>
       </div>
       <div className="box">
-        {!(singletonCompleted && !_.isEmpty(listItems))
+        {!(singletonCompleted && _.isArray(listItems) && !_.isEmpty(listItems))
           ? <div className="item">
             <p>{emptyListText}</p>
           </div>

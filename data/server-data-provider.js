@@ -145,8 +145,11 @@ export async function postTodoListItem(simpleListItem) {
     const result = await collection.insertOne(simpleListItem);
     console.log('[MONGODB] result:', result);
 
+    // Check the 'result' and ONFAIL return an Error string
+    if (!("acknowledged" in result) || !result.acknowledged) {
+      return `Failed to insert the new item into the 'Today' list.`;
+    }
     // Return a full 'listItem' with its final _id
-    // <<TODO>> Check the 'result' and ONFAIL return an Error string
     console.log(`[SERVER] Inserted the new item '${result.insertedId}' into the 'Today' list...`);
     let insertedListItem = { ...simpleListItem };
     insertedListItem._id = result.insertedId;
@@ -202,8 +205,11 @@ export async function deleteTodoListItem(itemId) {
     const result = await collection.findOneAndDelete(queryFilter);
     console.log('[MONGODB] result:', result);
 
+    // Check the 'result' and ONFAIL return an Error string
+    if (_.isEmpty(result)) {
+      return `Failed to find the item '${itemId}' in the 'Today' list.`;
+    }
     // Return the deleted full 'listItem'
-    // <<TODO>> Check the 'result' and ONFAIL return an Error string
     const deletedListItem = result.value;
     return deletedListItem;
   }
@@ -271,7 +277,7 @@ export async function postCustomList(simpleCustomList) {
     console.log('[SERVER] Successfully connected!');
 
     // Insert the new Custom List in the 'customList' Collection
-    // <<TODO>> Avoid duplications!
+    // Avoiding duplications **DONE**!
     const db = client.db(todoListDBName);
     const collection = db.collection(todoListCustomCollectionName);
 
@@ -281,13 +287,23 @@ export async function postCustomList(simpleCustomList) {
     };
 
     console.log(`[SERVER] Inserting the '${simpleCustomList.listId}' list into the custom lists...`);
-    const result = await collection.insertOne(newCustomList);
+    const queryFilter = { 
+      listId: simpleCustomList.listId,
+    };
+    const updateOperations = { 
+      $setOnInsert: newCustomList,
+    };
+    const updateOptions = { upsert: true };
+    const result = await collection.updateOne(queryFilter, updateOperations, updateOptions);
     console.log('[MONGODB] result:', result);
 
+    // Check the 'result' and ONFAIL return an Error string
+    if (!("acknowledged" in result) || !result.acknowledged) {
+      return `Failed to insert the '${simpleCustomList.listId}' list into the custom lists.`;
+    }
     // Return the full 'customList' with its final _id
-    // <<TODO>> Check the 'result' and ONFAIL return an Error string
     let insertedCustomList = { ...newCustomList };
-    insertedCustomList._id = result.insertedId;
+    insertedCustomList._id = result.upsertedId;
     return insertedCustomList;
   }
   catch (error) {
@@ -325,8 +341,11 @@ export async function deleteCustomList(listId) {
     const result = await collection.findOneAndDelete(queryFilter, optionalSettings);
     console.log('[MONGODB] result:', result);
 
+    // Check the 'result' and and ONFAIL return an Error string
+    if (_.isEmpty(result)) {
+      return `Failed to find the item '${itemId}' in the '${listId}' list.`;
+    }
     // Return the deleted full 'customList'
-    // <<TODO>> Check the 'result' and and ONFAIL return an Error string
     const deletedCustomList = result.value;
     return deletedCustomList;
   }

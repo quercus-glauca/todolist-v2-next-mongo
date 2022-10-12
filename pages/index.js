@@ -2,7 +2,7 @@ import { Fragment } from "react";
 import ListItems from "../components/ListItems";
 import ListSelector from "../components/ListSelector";
 
-export default function Home() {
+export default function HomePage() {
   return (
     <Fragment>
       <div className="container">
