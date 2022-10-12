@@ -1,14 +1,22 @@
-export { getListTitleFromListId, getListIdFromListTitle } from "./some-data-helpers";
+export { getListTitleFromListId, getListIdFromListTitle } from "../helpers/some-data-helpers";
 
 import { MongoClient, ObjectId } from "mongodb";
 import _ from "lodash";
 
 const useDummyFallbackImplementation = false;
 const mongodbServerUri = process.env.MONGODB_LOCALSERVER_URI;
-const client = new MongoClient(mongodbServerUri);
 const todoListDBName = 'todoListDB';
 const todoListMainCollectionName = 'listItems';
 const todoListCustomCollectionName = 'customLists';
+
+
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// To help identify each Server Operation and watch concurrency in action!
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+let serverOperationId = new Uint32Array([1001, 2001, 3001]);
+export function getNextServerOperationId(index) {
+  return Atomics.add(serverOperationId, index, 1);
+}
 
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -58,34 +66,36 @@ const sampleCustomList = {
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Find all the 'listItems' in the 'main' Collection
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-export async function getTodoListItems() {
+export async function getTodoListItems(opId) {
   if (useDummyFallbackImplementation) {
     return __dummy_getTodoListItems();
   }
 
   // Connect to the MongoDB Database
-  console.log('[SERVER] Connecting to the database...');
+  const client = new MongoClient(mongodbServerUri);
+  console.log(`[SVR] #${opId} > Connecting to the database...`);
+
   try {
     await client.connect();
-    console.log('[SERVER] Successfully connected!');
+    console.log(`[SVR] #${opId} > Successfully connected!`);
 
     // Find all the Documents in the main Collection
     const db = client.db(todoListDBName);
     const collection = db.collection(todoListMainCollectionName);
     const cursor = collection.find();
 
-    const todoListItems = await _getTodoListItems(collection, cursor);
+    const todoListItems = await _getTodoListItems(opId, collection, cursor);
 
     // Return the 'listItems' array
     return todoListItems;
   }
   catch (error) {
-    console.log('[SERVER] Error:', error);
+    console.error(`[SVR] #${opId} > Error:`, error);
   }
   finally {
     // Ensures that the client will close when you finish/error
     await client.close();
-    console.log('[SERVER] Connection closed.');
+    console.log(`[SVR] #${opId} > Connection closed.`);
   }
 }
 
@@ -99,8 +109,8 @@ function __dummy_getTodoListItems() {
 
 //-----------------------------------------------------------------------------
 // Find all the 'listItems' in the Collection (private helper)
-async function _getTodoListItems(collection, cursor) {
-  console.log(`[SERVER] Finding all the items in the 'Today' list...`);
+async function _getTodoListItems(opId, collection, cursor) {
+  console.log(`[SVR] #${opId} > Finding all the items in the 'Today' list...`);
   const todoListItems = [];
 
   await cursor.forEach((item) => {
@@ -109,14 +119,14 @@ async function _getTodoListItems(collection, cursor) {
 
   if (todoListItems.length) {
     // Return the results
-    console.log(`[SERVER] Found ${todoListItems.length} items in the 'Today' list.`);
+    console.log(`[SVR] #${opId} > Found ${todoListItems.length} items in the 'Today' list.`);
     return todoListItems;
   }
   else {
     // If the collection is empty, return the default "Welcome Pack" Documents
     const result = await collection.insertMany(defaultTodoListItems);
     console.log('[MONGODB] result:', result);
-    console.log(`[SERVER] Returning the default "Welcome pack" ${result.insertedIds.length} items for the 'Today' list.`);
+    console.log(`[SVR] #${opId} > Returning the default "Welcome pack" ${result.insertedIds.length} items for the 'Today' list.`);
     return defaultTodoListItems;
   }
 
@@ -126,22 +136,24 @@ async function _getTodoListItems(collection, cursor) {
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Insert a 'simpleListItem' in the 'main' Collection
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-export async function postTodoListItem(simpleListItem) {
+export async function postTodoListItem(opId, simpleListItem) {
   if (useDummyFallbackImplementation) {
     return __dummy_postTodoListItem(simpleListItem);
   }
 
   // Connect to the MongoDB Database
-  console.log('[SERVER] Connecting to the database...');
+  const client = new MongoClient(mongodbServerUri);
+  console.log(`[SVR] #${opId} > Connecting to the database...`);
+  
   try {
     await client.connect();
-    console.log('[SERVER] Successfully connected!');
+    console.log(`[SVR] #${opId} > Successfully connected!`);
 
     // Insert the Document 'simpleListItem' in the main Collection
     const db = client.db(todoListDBName);
     const collection = db.collection(todoListMainCollectionName);
 
-    console.log(`[SERVER] Inserting a new item into the 'Today' list...`);
+    console.log(`[SVR] #${opId} > Inserting a new item into the 'Today' list...`);
     const result = await collection.insertOne(simpleListItem);
     console.log('[MONGODB] result:', result);
 
@@ -150,18 +162,18 @@ export async function postTodoListItem(simpleListItem) {
       return `Failed to insert the new item into the 'Today' list.`;
     }
     // Return a full 'listItem' with its final _id
-    console.log(`[SERVER] Inserted the new item '${result.insertedId}' into the 'Today' list...`);
+    console.log(`[SVR] #${opId} > Inserted the new item '${result.insertedId}' into the 'Today' list...`);
     let insertedListItem = { ...simpleListItem };
     insertedListItem._id = result.insertedId;
     return insertedListItem;
   }
   catch (error) {
-    console.log('[SERVER] Error:', error);
+    console.error(`[SVR] #${opId} > Error:`, error);
   }
   finally {
     // Ensures that the client will close when you finish/error
     await client.close();
-    console.log('[SERVER] Connection closed.');
+    console.log(`[SVR] #${opId} > Connection closed.`);
   }
 }
 
@@ -181,22 +193,24 @@ function __dummy_postTodoListItem(simpleListItem) {
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Delete the 'listItem._id' from the 'main' Collection
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-export async function deleteTodoListItem(itemId) {
+export async function deleteTodoListItem(opId, itemId) {
   if (useDummyFallbackImplementation) {
     return __dummy_deleteTodoListItem(itemId);
   }
 
   // Connect to the MongoDB Database
-  console.log('[SERVER] Connecting to the database...');
+  const client = new MongoClient(mongodbServerUri);
+  console.log(`[SVR] #${opId} > Connecting to the database...`);
+
   try {
     await client.connect();
-    console.log('[SERVER] Successfully connected!');
+    console.log(`[SVR] #${opId} > Successfully connected!`);
 
     // Delete the 'listItem._id' from the main Collection
     const db = client.db(todoListDBName);
     const collection = db.collection(todoListMainCollectionName);
 
-    console.log(`[SERVER] Deleting the item '${itemId}' from the 'Today' list...`);
+    console.log(`[SVR] #${opId} > Deleting the item '${itemId}' from the 'Today' list...`);
     const queryFilter = {
       _id: (typeof itemId === "string" && itemId.length === 24)
         ? new ObjectId(itemId)
@@ -214,12 +228,12 @@ export async function deleteTodoListItem(itemId) {
     return deletedListItem;
   }
   catch (error) {
-    console.log('[SERVER] Error:', error);
+    console.error(`[SVR] #${opId} > Error:`, error);
   }
   finally {
     // Ensures that the client will close when you finish/error
     await client.close();
-    console.log('[SERVER] Connection closed.');
+    console.log(`[SVR] #${opId} > Connection closed.`);
   }
 }
 
@@ -235,12 +249,14 @@ function __dummy_deleteTodoListItem(itemId) {
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Find all the Custom Lists
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-export async function getCustomLists() {
+export async function getCustomLists(opId) {
   // Connect to the MongoDB Database
-  console.log('[SERVER] Connecting to the database...');
+  const client = new MongoClient(mongodbServerUri);
+  console.log(`[SVR] #${opId} > Connecting to the database...`);
+
   try {
     await client.connect();
-    console.log('[SERVER] Successfully connected!');
+    console.log(`[SVR] #${opId} > Successfully connected!`);
 
     // Find all the Custom Lists in the 'customList' Collection
     const db = client.db(todoListDBName);
@@ -252,16 +268,16 @@ export async function getCustomLists() {
     });
 
     // Return the results
-    console.log(`[SERVER] Found ${customLists.length} custom lists.`);
+    console.log(`[SVR] #${opId} > Found ${customLists.length} custom lists.`);
     return customLists;
   }
   catch (error) {
-    console.log('[SERVER] Error:', error);
+    console.error(`[SVR] #${opId} > Error:`, error);
   }
   finally {
     // Ensures that the client will close when you finish/error
     await client.close();
-    console.log('[SERVER] Connection closed.');
+    console.log(`[SVR] #${opId} > Connection closed.`);
   }
 }
 
@@ -269,12 +285,14 @@ export async function getCustomLists() {
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Insert a new Custom List
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-export async function postCustomList(simpleCustomList) {
+export async function postCustomList(opId, simpleCustomList) {
   // Connect to the MongoDB Database
-  console.log('[SERVER] Connecting to the database...');
+  const client = new MongoClient(mongodbServerUri);
+  console.log(`[SVR] #${opId} > Connecting to the database...`);
+
   try {
     await client.connect();
-    console.log('[SERVER] Successfully connected!');
+    console.log(`[SVR] #${opId} > Successfully connected!`);
 
     // Insert the new Custom List in the 'customList' Collection
     // Avoiding duplications **DONE**!
@@ -286,7 +304,7 @@ export async function postCustomList(simpleCustomList) {
       todoList: [],
     };
 
-    console.log(`[SERVER] Inserting the '${simpleCustomList.listId}' list into the custom lists...`);
+    console.log(`[SVR] #${opId} > Inserting the '${simpleCustomList.listId}' list into the custom lists...`);
     const queryFilter = { 
       listId: simpleCustomList.listId,
     };
@@ -307,12 +325,12 @@ export async function postCustomList(simpleCustomList) {
     return insertedCustomList;
   }
   catch (error) {
-    console.log('[SERVER] Error:', error);
+    console.error(`[SVR] #${opId} > Error:`, error);
   }
   finally {
     // Ensures that the client will close when you finish/error
     await client.close();
-    console.log('[SERVER] Connection closed.');
+    console.log(`[SVR] #${opId} > Connection closed.`);
   }
 }
 
@@ -320,18 +338,20 @@ export async function postCustomList(simpleCustomList) {
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Delete the Custom List
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-export async function deleteCustomList(listId) {
+export async function deleteCustomList(opId, listId) {
   // Connect to the MongoDB Database
-  console.log('[SERVER] Connecting to the database...');
+  const client = new MongoClient(mongodbServerUri);
+  console.log(`[SVR] #${opId} > Connecting to the database...`);
+
   try {
     await client.connect();
-    console.log('[SERVER] Successfully connected!');
+    console.log(`[SVR] #${opId} > Successfully connected!`);
 
     // Delete the Custom List from the 'customList' Collection
     const db = client.db(todoListDBName);
     const collection = db.collection(todoListCustomCollectionName);
 
-    console.log(`[SERVER] Deleting the '${listId}' list from the custom lists...`);
+    console.log(`[SVR] #${opId} > Deleting the '${listId}' list from the custom lists...`);
     const queryFilter = { listId };
     const optionalSettings = {
       projection: {
@@ -350,12 +370,12 @@ export async function deleteCustomList(listId) {
     return deletedCustomList;
   }
   catch (error) {
-    console.log('[SERVER] Error:', error);
+    console.error(`[SVR] #${opId} > Error:`, error);
   }
   finally {
     // Ensures that the client will close when you finish/error
     await client.close();
-    console.log('[SERVER] Connection closed.');
+    console.log(`[SVR] #${opId} > Connection closed.`);
   }
 }
 
@@ -364,18 +384,20 @@ export async function deleteCustomList(listId) {
 // Find all the nested 'listItems' in a 'customList'
 // identified by its 'listId' in the 'customLists' collection
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-export async function getCustomTodoListItems(listId) {
+export async function getCustomTodoListItems(opId, listId) {
   // Connect to the MongoDB Database
-  console.log('[SERVER] Connecting to the database...');
+  const client = new MongoClient(mongodbServerUri);
+  console.log(`[SVR] #${opId} > Connecting to the database...`);
+
   try {
     await client.connect();
-    console.log('[SERVER] Successfully connected!');
+    console.log(`[SVR] #${opId} > Successfully connected!`);
 
     // Find all the nested Documents in the custom Collection Document
     const db = client.db(todoListDBName);
     const collection = db.collection(todoListCustomCollectionName);
 
-    console.log(`[SERVER] Finding all the items in the '${listId}' list...`);
+    console.log(`[SVR] #${opId} > Finding all the items in the '${listId}' list...`);
     const queryFilter = { listId };
     const cursor = collection.find(queryFilter);
     let listItems;
@@ -391,12 +413,12 @@ export async function getCustomTodoListItems(listId) {
     return listItems;
   }
   catch (error) {
-    console.log('[SERVER] Error:', error);
+    console.error(`[SVR] #${opId} > Error:`, error);
   }
   finally {
     // Ensures that the client will close when you finish/error
     await client.close();
-    console.log('[SERVER] Connection closed.');
+    console.log(`[SVR] #${opId} > Connection closed.`);
   }
 }
 
@@ -405,18 +427,20 @@ export async function getCustomTodoListItems(listId) {
 // Insert a nested 'simpleListItem' into a 'customList'
 // identified by its 'listId' in the 'customLists' collection
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-export async function postCustomTodoListItem(listId, simpleListItem) {
+export async function postCustomTodoListItem(opId, listId, simpleListItem) {
   // Connect to the MongoDB Database
-  console.log('[SERVER] Connecting to the database...');
+  const client = new MongoClient(mongodbServerUri);
+  console.log(`[SVR] #${opId} > Connecting to the database...`);
+
   try {
     await client.connect();
-    console.log('[SERVER] Successfully connected!');
+    console.log(`[SVR] #${opId} > Successfully connected!`);
 
     // Insert the nested Document in the custom Collection Document
     const db = client.db(todoListDBName);
     const collection = db.collection(todoListCustomCollectionName);
 
-    console.log(`[SERVER] Inserting a new item into the '${listId}' list...`);
+    console.log(`[SVR] #${opId} > Inserting a new item into the '${listId}' list...`);
     const queryFilter = { listId };
     const insertedListItem = {
       _id: new ObjectId(),
@@ -435,16 +459,16 @@ export async function postCustomTodoListItem(listId, simpleListItem) {
       return `Failed to insert a new item into the '${listId}' list.`;
     }
     // Return a full 'listItem' with its final _id
-    console.log(`[SERVER] Inserted the new item '${insertedListItem._id}' into the '${listId}' list...`);
+    console.log(`[SVR] #${opId} > Inserted the new item '${insertedListItem._id}' into the '${listId}' list...`);
     return insertedListItem;
   }
   catch (error) {
-    console.log('[SERVER] Error:', error);
+    console.error(`[SVR] #${opId} > Error:`, error);
   }
   finally {
     // Ensures that the client will close when you finish/error
     await client.close();
-    console.log('[SERVER] Connection closed.');
+    console.log(`[SVR] #${opId} > Connection closed.`);
   }
 }
 
@@ -453,18 +477,20 @@ export async function postCustomTodoListItem(listId, simpleListItem) {
 // Delete a nested 'simpleListItem' from a 'customList'
 // identified by its 'listId' in the 'customLists' collection
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-export async function deleteCustomTodoListItem(listId, itemId) {
+export async function deleteCustomTodoListItem(opId, listId, itemId) {
   // Connect to the MongoDB Database
-  console.log('[SERVER] Connecting to the database...');
+  const client = new MongoClient(mongodbServerUri);
+  console.log(`[SVR] #${opId} > Connecting to the database...`);
+
   try {
     await client.connect();
-    console.log('[SERVER] Successfully connected!');
+    console.log(`[SVR] #${opId} > Successfully connected!`);
 
     // Delete the nested Document from the custom Collection Document
     const db = client.db(todoListDBName);
     const collection = db.collection(todoListCustomCollectionName);
 
-    console.log(`[SERVER] Deleting the item '${itemId}' from the '${listId}' list...`);
+    console.log(`[SVR] #${opId} > Deleting the item '${itemId}' from the '${listId}' list...`);
     const queryFilter = { listId };
     const deletedListItem = {
       _id: (typeof itemId === "string" && itemId.length === 24)
@@ -487,11 +513,11 @@ export async function deleteCustomTodoListItem(listId, itemId) {
     return deletedListItem;
   }
   catch (error) {
-    console.log('[SERVER] Error:', error);
+    console.error(`[SVR] #${opId} > Error:`, error);
   }
   finally {
     // Ensures that the client will close when you finish/error
     await client.close();
-    console.log('[SERVER] Connection closed.');
+    console.log(`[SVR] #${opId} > Connection closed.`);
   }
 }

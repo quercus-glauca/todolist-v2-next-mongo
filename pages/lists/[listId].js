@@ -2,14 +2,14 @@ import { Fragment, useEffect, useState } from "react";
 import { useRouter } from 'next/router';
 import ListItems from "../../components/ListItems";
 import ListSelector from "../../components/ListSelector";
-import { getListTitleFromListId } from "../../data/some-data-helpers";
+import { getListTitleFromListId } from "../../helpers/some-data-helpers";
 import _ from "lodash";
 
 export default function CustomListPage() {
   const router = useRouter();
-  console.log('[DEBUG] CustomListPage router:', router);
-  console.log('[DEBUG] CustomListPage router.pathname:', router.pathname);
-  console.log('[DEBUG] CustomListPage router.query:', router.query);
+  console.debug('[DEBUG] CustomListPage router:', router);
+  console.debug('[DEBUG] CustomListPage router.pathname:', router.pathname);
+  console.debug('[DEBUG] CustomListPage router.query:', router.query);
   // router.pathname: "/lists/[listId]"
   // router.query: { listId: "tommorrow" }
 

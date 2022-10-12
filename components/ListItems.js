@@ -25,12 +25,12 @@ export default function ListItems(props) {
   useEffect(() => {
     getTodoListItems(apiUrl, listId)
       .then((todoListItems) => {
-        console.log('[DEBUG] ListItems useEffect:', todoListItems);
+        console.debug('[DEBUG] ListItems useEffect:', todoListItems);
         setListItems(todoListItems);
         setSingletonCompleted(true);
       })
       .catch((error) => {
-        console.log(error);
+        console.error(error);
       });
 
   }, [apiUrl, listId, updateList]);
@@ -47,11 +47,11 @@ export default function ListItems(props) {
 
     postTodoListItem(apiUrl, simpleNewItem, listId)
       .then((listItem) => {
-        console.log('[DEBUG] ListItems handleAddNewItem:', listItem);
+        console.debug('[DEBUG] ListItems handleAddNewItem:', listItem);
         setUpdateList((prevValue) => (prevValue + 1));
       })
       .catch((error) => {
-        console.log(error);
+        console.error(error);
       })
       .finally(() => {
         newItemInputRef.current.value = '';
@@ -63,11 +63,11 @@ export default function ListItems(props) {
   function handleDeleteItem(itemId, listId) {
     deleteTodoListItem(apiUrl, itemId, listId)
       .then((result) => {
-        console.log('[DEBUG] ListItems handleDeleteItem:', result);
+        console.debug('[DEBUG] ListItems handleDeleteItem:', result);
         setUpdateList((prevValue) => (prevValue + 1));
       })
       .catch((error) => {
-        console.log(error);
+        console.error(error);
       });
   }
 

@@ -1,5 +1,8 @@
-export { getListTitleFromListId, getListIdFromListTitle } from "./some-data-helpers";
+export { getListTitleFromListId, getListIdFromListTitle } from "../helpers/some-data-helpers";
 
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// Documents of type: 'listItem' 
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 const sampleSimpleListItem = {
   date: new Date(),
   text: "Sample List Item",
@@ -9,14 +12,6 @@ const sampleListItem = {
   _id: 0,
   date: new Date(),
   text: "Sample List Item",
-};
-
-const sampleCustomList = {
-  _id: 0,
-  date: new Date(),
-  listId: "url-friendly-title",
-  listTitle: "User Friendly Title",
-  todoList: [],
 };
 
 export async function getTodoListItems(apiUrl, listId) {
@@ -36,7 +31,7 @@ export async function getTodoListItems(apiUrl, listId) {
         resolve(result.items);
       })
       .catch((error) => {
-        console.log('[API] GET Error:', error);
+        console.error('[API] GET Error:', error);
         reject(error);
       });
   });
@@ -66,7 +61,7 @@ export async function postTodoListItem(apiUrl, simpleListItem, listId) {
         resolve(result.item);
       })
       .catch((error) => {
-        console.log('[API] POST Error:', error);
+        console.error('[API] POST Error:', error);
         reject(error);
       });
   });
@@ -96,12 +91,23 @@ export async function deleteTodoListItem(apiUrl, itemId, listId) {
         resolve(result);
       })
       .catch((error) => {
-        console.log('[API] DELETE Error:', error);
+        console.error('[API] DELETE Error:', error);
         reject(error);
       });
   });
 
 }
+
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// Documents of type: 'customList' 
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+const sampleCustomList = {
+  _id: 0,
+  date: new Date(),
+  listId: "url-friendly-title",
+  listTitle: "User Friendly Title",
+  todoList: [],
+};
 
 export async function getCustomLists(apiUrl) {
   // Construct the API Entrypoint URL
@@ -120,16 +126,32 @@ export async function getCustomLists(apiUrl) {
         resolve(result.items);
       })
       .catch((error) => {
-        console.log('[API] GET Error:', error);
+        console.error('[API] GET Error:', error);
         reject(error);
       });
   });
 
 }
 
+// Helping MongoDB to **AVOID** early document duplications!!
+// EXPLANATION: useEffect() may be called twice by React/Next in 'NODE_END=development'
+let lastCustomList = {
+  listId: "",
+  timestamp: new Date().valueOf()
+};
+
 export async function postCustomList(apiUrl, simpleCustomList) {
   // Construct the API Entrypoint URL
   const apiEntrypoint = apiUrl;
+
+  // Helping MongoDB to **AVOID** early document duplications!!
+  const now = new Date().valueOf();
+  if (lastCustomList.listId === simpleCustomList.listId && (now - lastCustomList.timestamp < 5000)) {
+    console.log(`[API] POST ${apiUrl} > Detected early duplication for '${lastCustomList.listId}'!`);
+    return simpleCustomList;
+  }
+  lastCustomList.listId = simpleCustomList.listId;
+  lastCustomList.timestamp = now;
 
   // Use the JavaScript fetch API to POST to our Server from the Client
   // Return an explicit Promise to let the Client to Synch to the Result:
@@ -150,7 +172,7 @@ export async function postCustomList(apiUrl, simpleCustomList) {
         resolve(result.item);
       })
       .catch((error) => {
-        console.log('[API] POST Error:', error);
+        console.error('[API] POST Error:', error);
         reject(error);
       });
   });
@@ -180,7 +202,7 @@ export async function deleteCustomList(apiUrl, listId) {
         resolve(result);
       })
       .catch((error) => {
-        console.log('[API] DELETE Error:', error);
+        console.error('[API] DELETE Error:', error);
         reject(error);
       });
   });
